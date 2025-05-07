@@ -151,6 +151,26 @@ struct STMT* Debugger::get_next_stmt(struct STMT* stmt)
       return nullptr;
 } // get_next_stmt
 
+void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
+    if (stmt == nullptr)
+      return;
+    if (stmt->stmt_type == STMT_ASSIGNMENT) {
+    stmt->types.assignment->next_stmt = next;
+    }
+    else if (stmt->stmt_type == STMT_FUNCTION_CALL) {
+      stmt->types.function_call->next_stmt = next;
+    }
+    else if (stmt->stmt_type == STMT_PASS) {
+      stmt->types.pass->next_stmt = next;
+    }
+    else if (stmt->stmt_type == STMT_IF_THEN_ELSE) {
+      stmt->types.if_then_else->next_stmt = next;
+    }
+    else if (stmt->stmt_type == STMT_WHILE_LOOP) {
+      stmt->types.while_loop->next_stmt = next;
+    }
+}
+
 
 // step function
 // see header file for comments
