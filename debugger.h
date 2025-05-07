@@ -63,7 +63,12 @@ public:
   // that correspond to the curr_stmt as it traverses the program graph
   void step();
 
-  
+  // print_line();
+  //
+  // Saves the next_stmt pointer in a temp var, then sets the next_stmt of curr_stmt to null
+  // This allows for programgraph_print() to print only a passed stmt pointer
+  // The link to next_stmt is restored before the function exits by using the saved pointer
+  void print_line();
 
 };
 

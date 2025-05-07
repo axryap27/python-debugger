@@ -104,20 +104,27 @@ void Debugger::run()
     }
     else if (cmd == "s")
     {
-
-      // line #
-      // "#: stmt"
-      // some tracking to make sure we are going to get stmt/line --> pointer to stmt graph prob
+      step();
     }
     else if (cmd == "w"){
-      Debugger::step();
+      if (curr_stmt == nullptr){
+        cout << "completed execution" << endl;
+      }
+      else{
+        print_line();
+        // //temp unlinks to access the program's specific line info
+        // set_next_stmt(curr_stmt, next_stmt);
+
+        // cout << "line " << curr_stmt->line << endl;
+        // cout << curr_stmt->line << ": " << programgraph_print(curr_stmt) << endl;
+        // // programgraph_print(curr_stmt);
+      }
     }
     else if (cmd == "pg"){
       programgraph_print(program);
     }
     else
     {
-
       cout << "unknown command" << endl;
     }
 
@@ -189,4 +196,22 @@ void Debugger::step(){
   set_next_stmt(curr_stmt, saved_next);
   curr_stmt = saved_next;
   next_stmt = get_next_stmt(curr_stmt);
+}
+
+// print_line function
+// see .h file for comments
+void Debugger::print_line(){
+  cout << "line " << curr_stmt->line << endl;
+
+  // save original next in temp var
+  STMT* saved_next = get_next_stmt(curr_stmt);
+
+  // break link to rest of the program graph
+  set_next_stmt(curr_stmt, nullptr);
+
+  // print the single statement
+  programgraph_print(curr_stmt);
+
+  // restore link using saved_next
+  set_next_stmt(curr_stmt, saved_next);
 }
