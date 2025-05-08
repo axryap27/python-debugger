@@ -40,6 +40,7 @@ Debugger::Debugger(struct STMT *program)
     this->next_stmt = nullptr;
   }
   this->mem = ram_init();
+  this->state = "Loaded";
 }
 
 //
@@ -70,7 +71,6 @@ void Debugger::run()
 
     if (cmd == "q")
     {
-
       break;
     }
     else if (cmd == "h")
@@ -124,13 +124,23 @@ void Debugger::run()
     else if (cmd == "pg"){
       programgraph_print(program);
     }
-    else
-    {
+    else if (cmd == "sm"){
+      ram_print(mem);
+    }
+    else if (cmd == "ss"){
+      cout << state << endl;
+    }
+    else if (cmd == "p"){
+      string varname;
+      cin >> varname;
+
+      const char* var = varname.c_str();
+      RAM_VALUE* val = ram_read_cell_by_name(mem, (char*) var);
+    }
+    else if (cmd == ""){
       cout << "unknown command" << endl;
     }
-
   } // while
-
 } // run
 
 //
@@ -179,12 +189,19 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
     }
 }
 
-
 // step function
 // see header file for comments
 void Debugger::step(){
+  if (state == "Completed"){
+    cout << "program has completed" << endl;
+    return;
+  }
+  if (state == "Loaded"){
+    state = "Running";
+  }
   if(curr_stmt == nullptr){
     cout << "program has completed" << endl;
+    state = "Completed";
     return;
   }
   // temp variable for next_stmt 
