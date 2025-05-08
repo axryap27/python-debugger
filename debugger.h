@@ -29,7 +29,7 @@ private:
   struct STMT* program; //root of the program graph struct
   struct STMT* curr_stmt; //statement we are on 
   struct STMT* next_stmt; // next statement
-  struct STMT* mem; // execution needed memory
+  struct RAM* mem; // execution needed memory
   string state; 
 
 public:

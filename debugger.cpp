@@ -39,6 +39,7 @@ Debugger::Debugger(struct STMT *program)
   else{
     this->next_stmt = nullptr;
   }
+  this->mem = ram_init();
 }
 
 //
@@ -190,7 +191,7 @@ void Debugger::step(){
   struct STMT* saved_next = next_stmt;
   set_next_stmt(curr_stmt, nullptr);
 
-  execute(curr_stmt, nullptr);
+  execute(curr_stmt, mem);
 
   // relink and move to next line
   set_next_stmt(curr_stmt, saved_next);
