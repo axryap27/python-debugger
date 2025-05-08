@@ -81,5 +81,16 @@ public:
   // "varname (type): value" using pass by value. The copy is freed after the output is made.
   void print_ram_value(string varname, RAM_VALUE* value);
   
+  // unlink_stmt
+  //
+  // unlinks the curr stmt and a passed by reference of the saved next stmt
+  //
+  void unlink_stmt(STMT* stmt, STMT** saved_next);
+
+  // relink_stmt
+  //
+  // relinks passed stmts together by just setting next_stmt to the saved_next temp variable
+  //
+  void relink_stmt(STMT* stmt, STMT* saved_next);
 };
 

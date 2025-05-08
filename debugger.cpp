@@ -214,16 +214,19 @@ void Debugger::step(){
     return;
   }
   // temp variable for next_stmt 
-  struct STMT* saved_next = next_stmt;
-  set_next_stmt(curr_stmt, nullptr);
+  STMT* saved_next = nullptr;
+  unlink_stmt(curr_stmt, &saved_next);
 
+  // executes curr stmt using mem
   execute(curr_stmt, mem);
 
   // relink and move to next line
-  set_next_stmt(curr_stmt, saved_next);
+  relink_stmt(curr_stmt, saved_next);
+  // ram_destroy();
+  
+  // advanced pointers
   curr_stmt = saved_next;
   next_stmt = get_next_stmt(curr_stmt);
-  // ram_destroy();
 }
 
 //
@@ -233,16 +236,16 @@ void Debugger::print_line(){
   cout << "line " << curr_stmt->line << endl;
 
   // save original next in temp var
-  STMT* saved_next = get_next_stmt(curr_stmt);
+  STMT* saved_next = nullptr;
 
   // break link to rest of the program graph
-  set_next_stmt(curr_stmt, nullptr);
+  unlink_stmt(curr_stmt, &saved_next);
 
   // print the single statement
   programgraph_print(curr_stmt);
 
-  // restore link using saved_next
-  set_next_stmt(curr_stmt, saved_next);
+  // restore link using saved_nextd
+  relink_stmt(curr_stmt, saved_next);
 }
 
 //
@@ -281,4 +284,23 @@ void Debugger::print_ram_value(string varname, RAM_VALUE* value){
   cout << endl;
   ram_free_value(value);  // only once, at the end
 
+}
+
+//
+// unlink_stmt
+//
+void Debugger::unlink_stmt(STMT* stmt, STMT** saved_next){
+    if (stmt == nullptr)
+      return;
+    *saved_next = get_next_stmt(stmt);
+    set_next_stmt(stmt, nullptr);
+}
+
+//
+// relink_stmt
+//
+void Debugger::relink_stmt(STMT* stmt, STMT* saved_next){
+  if (stmt == nullptr)
+    return;
+  set_next_stmt(stmt, saved_next);
 }
