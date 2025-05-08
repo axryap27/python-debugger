@@ -112,12 +112,12 @@ void Debugger::run()
       }
       else{
         print_line();
-        // //temp unlinks to access the program's specific line info
+        // temp unlinks to access the program's specific line info
         // set_next_stmt(curr_stmt, next_stmt);
 
         // cout << "line " << curr_stmt->line << endl;
         // cout << curr_stmt->line << ": " << programgraph_print(curr_stmt) << endl;
-        // // programgraph_print(curr_stmt);
+        // programgraph_print(curr_stmt);
       }
     }
     else if (cmd == "pg"){
@@ -196,6 +196,7 @@ void Debugger::step(){
   set_next_stmt(curr_stmt, saved_next);
   curr_stmt = saved_next;
   next_stmt = get_next_stmt(curr_stmt);
+  // ram_destroy();
 }
 
 // print_line function
