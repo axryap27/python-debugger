@@ -56,6 +56,7 @@ public:
   //
   void set_next_stmt(struct STMT* stmt, struct STMT* next);
 
+
   // step
   //
   // Performs a "step" operation on the program by linking and unlinking
@@ -63,12 +64,21 @@ public:
   // that correspond to the curr_stmt as it traverses the program graph
   void step();
 
-  // print_line();
+
+  // print_line
   //
   // Saves the next_stmt pointer in a temp var, then sets the next_stmt of curr_stmt to null
   // This allows for programgraph_print() to print only a passed stmt pointer
   // The link to next_stmt is restored before the function exits by using the saved pointer
   void print_line();
 
+
+  // print_ram_value
+  //
+  // Prints the value, ram addr, and variable name of a variable inputted
+  // Goes through the different 'RAM_TYPE's and outputs in the format 
+  // "varname (type): value" using pass by value. The copy is freed after the output is made.
+  void print_ram_value();
+  
 };
 
