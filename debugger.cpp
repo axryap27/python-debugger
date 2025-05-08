@@ -134,14 +134,45 @@ void Debugger::run()
       string varname;
       cin >> varname;
 
-      const char* var = varname.c_str();
-      RAM_VALUE* val = ram_read_cell_by_name(mem, (char*) var);
+      const char* name = varname.c_str();
+      RAM_VALUE* value = ram_read_cell_by_name(mem, (char*) name);
+      
+      // outputting specific var types based on pointer
+      if (value->value_type == RAM_TYPE_INT){
+        cout << varname << " (" << value->types.i << "): " << value << endl;
+        ram_free_value(value);
+      }
+      else if (value->value_type == RAM_TYPE_BOOLEAN){
+        cout << varname << " (" << value->types.i << "): " << value << endl;
+        ram_free_value(value);
+
+      }
+      else if (value->value_type == RAM_TYPE_PTR){
+        cout << varname << " (" << value->types.i << "): " << value << endl;
+        ram_free_value(value);
+      }
+      else if (value->value_type == RAM_TYPE_REAL){
+        cout << varname << " (" << value->types.d << "): " << value << endl;
+        ram_free_value(value);
+      }
+      else if (value->value_type == RAM_TYPE_STR){
+        cout << varname << " (" << value->types.s << "): " << value << endl;
+        ram_free_value(value);
+      }
+      else if (value->value_type == RAM_TYPE_NONE){
+        cout << "none" << endl;
+        ram_free_value(value);
+      }
+      else{
+        cout << "no such variable" << endl;
+      }
     }
     else if (cmd == ""){
       cout << "unknown command" << endl;
     }
   } // while
 } // run
+
 
 //
 // Get_Next_Stmt --- See header file for comments
@@ -169,6 +200,9 @@ struct STMT* Debugger::get_next_stmt(struct STMT* stmt)
       return nullptr;
 } // get_next_stmt
 
+//
+//set_next_stmt
+// see header for comments
 void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
     if (stmt == nullptr)
       return;
@@ -188,7 +222,7 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
       stmt->types.while_loop->next_stmt = next;
     }
 }
-
+//
 // step function
 // see header file for comments
 void Debugger::step(){
@@ -217,6 +251,7 @@ void Debugger::step(){
   // ram_destroy();
 }
 
+//
 // print_line function
 // see .h file for comments
 void Debugger::print_line(){
