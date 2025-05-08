@@ -19,6 +19,7 @@
 #pragma once
 
 #include "programgraph.h"
+#include "ram.h"
 
 using namespace std;
 
@@ -60,7 +61,7 @@ public:
   // step
   //
   // Performs a "step" operation on the program by linking and unlinking
-  // the next_stmt and curr_stmt pointers along the program graph, while also executing the lines 
+  // the next_stmt and curr_stmt pointers along the program graph, whilqe also executing the lines 
   // that correspond to the curr_stmt as it traverses the program graph
   void step();
 
@@ -78,7 +79,7 @@ public:
   // Prints the value, ram addr, and variable name of a variable inputted
   // Goes through the different 'RAM_TYPE's and outputs in the format 
   // "varname (type): value" using pass by value. The copy is freed after the output is made.
-  void print_ram_value();
+  void print_ram_value(string varname, RAM_VALUE* value);
   
 };
 

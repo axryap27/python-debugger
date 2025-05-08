@@ -23,6 +23,7 @@
 #include "programgraph.h"
 #include "scanner.h"
 #include "execute.h"
+#include "ram.h"
 
 using namespace std;
 
@@ -133,39 +134,13 @@ void Debugger::run()
     else if (cmd == "p"){
       string varname;
       cin >> varname;
-
+      
       const char* name = varname.c_str();
       RAM_VALUE* value = ram_read_cell_by_name(mem, (char*) name);
-      
-      // outputting specific var types based on pointer
-      if (value->value_type == RAM_TYPE_INT){
-        cout << varname << " (" << value->types.i << "): " << value << endl;
-        ram_free_value(value);
-      }
-      else if (value->value_type == RAM_TYPE_BOOLEAN){
-        cout << varname << " (" << value->types.i << "): " << value << endl;
-        ram_free_value(value);
 
-      }
-      else if (value->value_type == RAM_TYPE_PTR){
-        cout << varname << " (" << value->types.i << "): " << value << endl;
-        ram_free_value(value);
-      }
-      else if (value->value_type == RAM_TYPE_REAL){
-        cout << varname << " (" << value->types.d << "): " << value << endl;
-        ram_free_value(value);
-      }
-      else if (value->value_type == RAM_TYPE_STR){
-        cout << varname << " (" << value->types.s << "): " << value << endl;
-        ram_free_value(value);
-      }
-      else if (value->value_type == RAM_TYPE_NONE){
-        cout << "none" << endl;
-        ram_free_value(value);
-      }
-      else{
-        cout << "no such variable" << endl;
-      }
+      // print helper function
+      print_ram_value(varname, value);
+
     }
     else if (cmd == ""){
       cout << "unknown command" << endl;
@@ -268,4 +243,42 @@ void Debugger::print_line(){
 
   // restore link using saved_next
   set_next_stmt(curr_stmt, saved_next);
+}
+
+//
+// print_ram_value
+// see .h file for comments
+void Debugger::print_ram_value(string varname, RAM_VALUE* value){
+   
+   if (value == nullptr){
+    cout << "no such variable" << endl;
+    return;
+   }
+
+   cout << varname << " (";
+
+  if (value->value_type == RAM_TYPE_INT) {
+    cout << "int): " << value->types.i;
+  }
+  else if (value->value_type == RAM_TYPE_BOOLEAN) {
+    if (value->types.i != 0)
+      cout << "bool): True";
+    else
+      cout << "bool): False";
+  }
+  else if (value->value_type == RAM_TYPE_PTR) {
+    cout << "ptr): " << value->types.i;
+  }
+  else if (value->value_type == RAM_TYPE_REAL) {
+    cout << "real): " << value->types.d;
+  }
+  else if (value->value_type == RAM_TYPE_STR) {
+    cout << "str): " << value->types.s;
+  }
+  else if (value->value_type == RAM_TYPE_NONE) {
+    cout << "none): None";
+  }
+  cout << endl;
+  ram_free_value(value);  // only once, at the end
+
 }
