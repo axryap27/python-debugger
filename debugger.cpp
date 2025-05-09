@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "debugger.h"
 #include "programgraph.h"
@@ -104,10 +105,11 @@ void Debugger::run()
            << "q -> Quit the debugger"
            << endl;
     }
-    else if (cmd == "s")
-    {
+    // steps through the programgraph STRUCT
+    else if (cmd == "s"){
       step();
     }
+    // what line is this? cmd
     else if (cmd == "w"){
       if (curr_stmt == nullptr){
         cout << "completed execution" << endl;
@@ -122,15 +124,19 @@ void Debugger::run()
         // programgraph_print(curr_stmt);
       }
     }
+    // prints full program
     else if (cmd == "pg"){
       programgraph_print(program);
     }
+    // shows programs RAM
     else if (cmd == "sm"){
       ram_print(mem);
     }
+    // shows program's state
     else if (cmd == "ss"){
       cout << state << endl;
     }
+    // prints varname retrieves from memory
     else if (cmd == "p"){
       string varname;
       cin >> varname;
@@ -140,6 +146,12 @@ void Debugger::run()
 
       // print helper function
       print_ram_value(varname, value);
+    }
+    else if (cmd == "b"){
+      int linenum;
+      cin >> linenum;
+
+      set_breakpoint(linenum);
 
     }
     else if (cmd == ""){
@@ -176,7 +188,7 @@ struct STMT* Debugger::get_next_stmt(struct STMT* stmt)
 } // get_next_stmt
 
 //
-//set_next_stmt
+// set_next_stmt
 // see header for comments
 void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
     if (stmt == nullptr)
@@ -197,6 +209,7 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
       stmt->types.while_loop->next_stmt = next;
     }
 }
+
 //
 // step function
 // see header file for comments
@@ -303,4 +316,24 @@ void Debugger::relink_stmt(STMT* stmt, STMT* saved_next){
   if (stmt == nullptr)
     return;
   set_next_stmt(stmt, saved_next);
+}
+
+//
+// set_breakpoint
+// 
+void Debugger::set_breakpoint(int linenum){
+  bool exists = false;
+  for (int bp : breakpoints){
+    if (bp == linenum){
+      exists = true;
+      break;
+    }
+  }
+  if (exists){
+    cout << "breakpoint already exists" << endl;
+  }
+  else{
+    breakpoints.push_back(linenum);
+    cout << "breakpoint set" << endl;
+  }
 }

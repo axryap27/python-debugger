@@ -17,7 +17,7 @@
 //
 
 #pragma once
-
+#include <vector>
 #include "programgraph.h"
 #include "ram.h"
 
@@ -32,6 +32,7 @@ private:
   struct STMT* next_stmt; // next statement
   struct RAM* mem; // execution needed memory
   string state; 
+  vector<int> breakpoints;
 
 public:
   Debugger(struct STMT* program);
@@ -83,14 +84,23 @@ public:
   
   // unlink_stmt
   //
-  // unlinks the curr stmt and a passed by reference of the saved next stmt
+  // Unlinks the curr stmt and a passed by reference of the saved next stmt 
+  // which is initilaized in debugger.cpp as nullptr. The pointer to the pointer is needed
+  // for the value to change outside of the function as well and not just locally as the copy of the pointer.
   //
   void unlink_stmt(STMT* stmt, STMT** saved_next);
 
   // relink_stmt
   //
-  // relinks passed stmts together by just setting next_stmt to the saved_next temp variable
+  // Relinks passed stmts together by just setting next_stmt to the saved_next temp variable
   //
   void relink_stmt(STMT* stmt, STMT* saved_next);
+  
+  // set_breakpoint
+  // 
+  // If the inputted line number is not in the vector, it adds the line to breakpoints.
+  // If the line number exists outputs to let the user know.
+  void set_breakpoint(int linenum);
+
 };
 
