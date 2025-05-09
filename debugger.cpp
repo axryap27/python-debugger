@@ -158,6 +158,13 @@ void Debugger::run()
       // if linenum within the bounds of program set_bp in breakpoints
       set_bp(linenum);
     }
+    else if (cmd == "rb"){
+      int linenum;
+      cin >> linenum;
+
+      remove_bp(linenum);
+
+    }
     else if (cmd == "lb") {
       if (breakpoints.empty()) {
         cout << "no breakpoints" << endl;
@@ -172,8 +179,10 @@ void Debugger::run()
         }
       cout << endl;
       } 
-}
-
+    }
+    else if (cmd == "cb"){
+      clear_bps();
+    }
     else if (cmd == ""){
       cout << "unknown command" << endl;
     }
@@ -384,4 +393,21 @@ bool Debugger::line_exists(STMT* stmt, int linenum){
     stmt = get_next_stmt(stmt);
   }
   return false;
+}
+
+void Debugger::remove_bp(int linenum){
+  for (auto iter = breakpoints.begin(); iter < breakpoints.end(); iter++){
+    if(*iter == linenum){
+      iter = breakpoints.erase(iter);
+      cout << "breakpoint removed" << endl;
+      return;
+    }
+  }
+  cout << "no such breakpoint" << endl;
+}
+
+void Debugger::clear_bps(){
+  for (int bp : breakpoints)
+    breakpoints.pop_back();
+  cout << "breakpoints cleared" << endl;
 }

@@ -112,5 +112,16 @@ public:
   // Returns a bool corresponding to if the line number exists in the program
   bool line_exists(STMT* stmt, int linenum);
 
+  //remove_bp
+  //
+  // If the inputted line number is in the vector of breakpoints, it removes that element.
+  // Outputs a statement to indicate if the action was successful or failed
+  void remove_bp(int linenum);
+
+  //clear_bps
+  //
+  // Removes every element of breakpoints vector by popping the last element repeatedly
+  void clear_bps();
+
 };
 
