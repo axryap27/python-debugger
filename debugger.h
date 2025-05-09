@@ -33,6 +33,9 @@ private:
   struct RAM* mem; // execution needed memory
   string state; 
   vector<int> breakpoints;
+  
+  //used to make sure if we already printed out breakpoint so next time "s" is pressed we run that breakpoint
+  int last_bp_line = -1; 
 
 public:
   Debugger(struct STMT* program);

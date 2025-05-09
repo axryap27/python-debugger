@@ -226,12 +226,26 @@ void Debugger::step(){
     state = "Completed";
     return;
   }
+  // check if we are at a breakpoint first before doing anything
+  for (int bp : breakpoints) {
+    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+      cout << "hit breakpoint at line " << curr_stmt->line << endl;
+      print_line();  // optional: show the line
+      last_bp_line = curr_stmt->line; // this is the line we stopped at
+      return;  // do not execute
+    }
+  }
+  // this code is only reached after the if statement above is run through once
   // temp variable for next_stmt 
   STMT* saved_next = nullptr;
   unlink_stmt(curr_stmt, &saved_next);
 
   // executes curr stmt using mem
+  //
   execute(curr_stmt, mem);
+
+  //reset the flag so the next bp set can be printed on terminal
+  last_bp_line = -1;
 
   // relink and move to next line
   relink_stmt(curr_stmt, saved_next);
