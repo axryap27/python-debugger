@@ -19,6 +19,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "debugger.h"
 #include "programgraph.h"
@@ -151,9 +152,28 @@ void Debugger::run()
       int linenum;
       cin >> linenum;
 
-      set_breakpoint(linenum);
-
+      if (!line_exists(program, linenum)){
+        cout << "no such line" << endl;
+      }
+      // if linenum within the bounds of program set_bp in breakpoints
+      set_bp(linenum);
     }
+    else if (cmd == "lb") {
+      if (breakpoints.empty()) {
+        cout << "no breakpoints" << endl;
+      } 
+      else {
+        // Copy and sort
+        vector<int> sorted = breakpoints;
+        sort(sorted.begin(), sorted.end());
+        cout << "breakpoints on lines: ";
+        for (int bp : sorted) {
+            cout << bp << " ";
+        }
+      cout << endl;
+      } 
+}
+
     else if (cmd == ""){
       cout << "unknown command" << endl;
     }
@@ -335,7 +355,10 @@ void Debugger::relink_stmt(STMT* stmt, STMT* saved_next){
 //
 // set_breakpoint
 // 
-void Debugger::set_breakpoint(int linenum){
+void Debugger::set_bp(int linenum){
+  if (!line_exists(program, linenum)){
+    return;
+  }
   bool exists = false;
   for (int bp : breakpoints){
     if (bp == linenum){
@@ -343,6 +366,7 @@ void Debugger::set_breakpoint(int linenum){
       break;
     }
   }
+
   if (exists){
     cout << "breakpoint already exists" << endl;
   }
@@ -350,4 +374,14 @@ void Debugger::set_breakpoint(int linenum){
     breakpoints.push_back(linenum);
     cout << "breakpoint set" << endl;
   }
+}
+
+bool Debugger::line_exists(STMT* stmt, int linenum){
+  while (stmt != nullptr){
+    if (stmt->line == linenum){
+      return true;
+    }
+    stmt = get_next_stmt(stmt);
+  }
+  return false;
 }

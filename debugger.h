@@ -99,11 +99,18 @@ public:
   //
   void relink_stmt(STMT* stmt, STMT* saved_next);
   
-  // set_breakpoint
+  // set_bp
   // 
   // If the inputted line number is not in the vector, it adds the line to breakpoints.
   // If the line number exists outputs to let the user know.
-  void set_breakpoint(int linenum);
+  void set_bp(int linenum);
+
+  // line_exists
+  //
+  // Traverses through the program graph using a pointer and checks
+  // if the line number is within the scope/range of the program graph.
+  // Returns a bool corresponding to if the line number exists in the program
+  bool line_exists(STMT* stmt, int linenum);
 
 };
 
