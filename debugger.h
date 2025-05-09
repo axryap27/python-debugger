@@ -91,13 +91,14 @@ public:
   // which is initilaized in debugger.cpp as nullptr. The pointer to the pointer is needed
   // for the value to change outside of the function as well and not just locally as the copy of the pointer.
   //
-  void unlink_stmt(STMT* stmt, STMT** saved_next);
-
+  void unlink_stmt(STMT* stmt, STMT** saved_next, STMT** saved_true = nullptr, STMT** saved_false = nullptr);
+  
   // relink_stmt
   //
   // Relinks passed stmts together by just setting next_stmt to the saved_next temp variable
-  //
-  void relink_stmt(STMT* stmt, STMT* saved_next);
+  // Checks to see what type of stmt curr is because if it is an if-then-stmt we need to 
+  // fork the curr_stmt and unlink all paths down condtional 
+  void relink_stmt(STMT* stmt, STMT* saved_next, STMT* saved_true = nullptr, STMT* saved_false = nullptr);
   
   // set_bp
   // 

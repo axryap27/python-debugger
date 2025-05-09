@@ -293,7 +293,10 @@ void Debugger::step(){
   // this code is only reached after the if statement above is run through once
   // temp variable for next_stmt 
   STMT* saved_next = nullptr;
-  unlink_stmt(curr_stmt, &saved_next);
+  STMT *saved_true = nullptr;
+  STMT *saved_false = nullptr;
+
+  unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
 
   // executes curr stmt using mem
   //
@@ -379,21 +382,58 @@ void Debugger::print_ram_value(string varname, RAM_VALUE* value){
 //
 // unlink_stmt
 //
-void Debugger::unlink_stmt(STMT* stmt, STMT** saved_next){
+void Debugger::unlink_stmt(STMT* stmt, STMT** saved_next, STMT** saved_true = nullptr, STMT** saved_false = nullptr){
     if (stmt == nullptr)
       return;
-    *saved_next = get_next_stmt(stmt);
-    set_next_stmt(stmt, nullptr);
-}
+
+    if (stmt->stmt_type == STMT_ASSIGNMENT) {
+      *saved_next = stmt->types.assignment->next_stmt;
+      stmt->types.assignment->next_stmt = nullptr;
+    }
+    else if (stmt->stmt_type == STMT_FUNCTION_CALL) {
+      *saved_next = stmt->types.function_call->next_stmt;
+      stmt->types.function_call->next_stmt = nullptr;
+    }
+    else if (stmt->stmt_type == STMT_PASS) {
+      *saved_next = stmt->types.pass->next_stmt;
+       stmt->types.pass->next_stmt = nullptr;
+    }
+    else if (stmt->stmt_type == STMT_IF_THEN_ELSE) {
+      if (saved_next)  
+        *saved_next = stmt->types.if_then_else->next_stmt;
+      if (saved_true)  
+        *saved_true = stmt->types.if_then_else->true_path;
+      if (saved_false) 
+        *saved_false = stmt->types.if_then_else->false_path;
+
+      stmt->types.if_then_else->next_stmt = nullptr;
+      stmt->types.if_then_else->true_path = nullptr;
+      stmt->types.if_then_else->false_path = nullptr;
+  }
+};
 
 //
 // relink_stmt
 //
-void Debugger::relink_stmt(STMT* stmt, STMT* saved_next){
-  if (stmt == nullptr)
-    return;
-  set_next_stmt(stmt, saved_next);
+void relink_stmt(STMT* stmt, STMT* saved_next, STMT* saved_true = nullptr, STMT* saved_false = nullptr) {
+  if (stmt == nullptr) return;
+
+  if (stmt->stmt_type == STMT_ASSIGNMENT) {
+    stmt->types.assignment->next_stmt = saved_next;
+  }
+  else if (stmt->stmt_type == STMT_FUNCTION_CALL) {
+    stmt->types.function_call->next_stmt = saved_next;
+  }
+  else if (stmt->stmt_type == STMT_PASS) {
+    stmt->types.pass->next_stmt = saved_next;
+  }
+  else if (stmt->stmt_type == STMT_IF_THEN_ELSE) {
+    stmt->types.if_then_else->next_stmt = saved_next;
+    stmt->types.if_then_else->true_path = saved_true;
+    stmt->types.if_then_else->false_path = saved_false;
+  }
 }
+
 
 //
 // set_breakpoint
