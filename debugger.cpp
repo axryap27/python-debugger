@@ -382,7 +382,7 @@ void Debugger::print_ram_value(string varname, RAM_VALUE* value){
 //
 // unlink_stmt
 //
-void Debugger::unlink_stmt(STMT* stmt, STMT** saved_next, STMT** saved_true = nullptr, STMT** saved_false = nullptr){
+void Debugger::unlink_stmt(STMT* stmt, STMT** saved_next, STMT** saved_true, STMT** saved_false){
     if (stmt == nullptr)
       return;
 
@@ -410,12 +410,12 @@ void Debugger::unlink_stmt(STMT* stmt, STMT** saved_next, STMT** saved_true = nu
       stmt->types.if_then_else->true_path = nullptr;
       stmt->types.if_then_else->false_path = nullptr;
   }
-};
+}
 
 //
 // relink_stmt
 //
-void relink_stmt(STMT* stmt, STMT* saved_next, STMT* saved_true = nullptr, STMT* saved_false = nullptr) {
+void Debugger::relink_stmt(STMT* stmt, STMT* saved_next, STMT* saved_true, STMT* saved_false) {
   if (stmt == nullptr) return;
 
   if (stmt->stmt_type == STMT_ASSIGNMENT) {
