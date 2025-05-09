@@ -183,6 +183,31 @@ void Debugger::run()
     else if (cmd == "cb"){
       clear_bps();
     }
+    else if (cmd == "r") {
+      while (curr_stmt != nullptr && state != "Completed") {
+        bool hit = false;
+
+        for (int bp : breakpoints) {
+          if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+            cout << "hit breakpoint at line " << curr_stmt->line << endl;
+            print_line();
+            last_bp_line = curr_stmt->line;
+            hit = true;
+            break;
+          }
+        }
+
+        if (hit) {
+          break;  // stop before executing
+        }
+
+        step();  // run current statement
+      }
+
+      if (state == "Completed") {
+        cout << "program has completed" << endl;
+      }
+    }
     else if (cmd == ""){
       cout << "unknown command" << endl;
     }
@@ -255,6 +280,7 @@ void Debugger::step(){
     state = "Completed";
     return;
   }
+
   // check if we are at a breakpoint first before doing anything
   for (int bp : breakpoints) {
     if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
@@ -271,7 +297,7 @@ void Debugger::step(){
 
   // executes curr stmt using mem
   //
-  execute(curr_stmt, mem);
+  ExecuteResult result = execute(curr_stmt, mem);
 
   //reset the flag so the next bp set can be printed on terminal
   last_bp_line = -1;
@@ -279,10 +305,18 @@ void Debugger::step(){
   // relink and move to next line
   relink_stmt(curr_stmt, saved_next);
   // ram_destroy();
+
+  if (!result.Success){
+    state = "Completed";
+    return;
+  }
   
   // advanced pointers
   curr_stmt = saved_next;
   next_stmt = get_next_stmt(curr_stmt);
+
+  if (curr_stmt == nullptr)
+    state = "Completed";
 }
 
 //
@@ -300,7 +334,7 @@ void Debugger::print_line(){
   // print the single statement
   programgraph_print(curr_stmt);
 
-  // restore link using saved_nextd
+  // restore link using saved_next
   relink_stmt(curr_stmt, saved_next);
 }
 
