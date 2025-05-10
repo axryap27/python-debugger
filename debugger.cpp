@@ -51,6 +51,7 @@ Debugger::Debugger(struct STMT *program)
 //
 Debugger::~Debugger()
 {
+  ram_destroy(mem);
 }
 
 //
@@ -112,18 +113,22 @@ void Debugger::run()
     }
     // what line is this? cmd
     else if (cmd == "w"){
-      if (curr_stmt == nullptr){
+      // if (state == "Completed"){
+      //   cout << "completed execution" << endl;
+      // }
+      if (curr_stmt == nullptr || state == "Completed"){
         cout << "completed execution" << endl;
       }
-      else{
+      if (curr_stmt != nullptr && state != "Completed"){
+        cout << "line " << curr_stmt->line << endl;
         print_line();
+      }
         // temp unlinks to access the program's specific line info
         // set_next_stmt(curr_stmt, next_stmt);
 
         // cout << "line " << curr_stmt->line << endl;
         // cout << curr_stmt->line << ": " << programgraph_print(curr_stmt) << endl;
         // programgraph_print(curr_stmt);
-      }
     }
     // prints full program
     else if (cmd == "pg"){
@@ -204,15 +209,18 @@ void Debugger::run()
         step();  // run current statement
       }
 
-      if (state == "Completed") {
-        cout << "program has completed" << endl;
-      }
+      // if (state == "Completed") {
+      //   cout << "program has completed" << endl;
+      // }
     }
     else if (cmd == ""){
       cout << "unknown command" << endl;
     }
+    else{
+      cout << "unknown command" << endl;
+    }
   } // while
-} // run
+ }// run
 
 
 //
@@ -285,7 +293,6 @@ void Debugger::step(){
   for (int bp : breakpoints) {
     if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
       cout << "hit breakpoint at line " << curr_stmt->line << endl;
-      print_line();  // optional: show the line
       last_bp_line = curr_stmt->line; // this is the line we stopped at
       return;  // do not execute
     }
@@ -326,18 +333,14 @@ void Debugger::step(){
 // print_line function
 // see .h file for comments
 void Debugger::print_line(){
-  cout << "line " << curr_stmt->line << endl;
-
-  // save original next in temp var
+  
+  if (state == "Completed" || curr_stmt == nullptr) {
+    cout << "completed execution" << endl;
+    return;
+  }
   STMT* saved_next = nullptr;
-
-  // break link to rest of the program graph
   unlink_stmt(curr_stmt, &saved_next);
-
-  // print the single statement
   programgraph_print(curr_stmt);
-
-  // restore link using saved_next
   relink_stmt(curr_stmt, saved_next);
 }
 
@@ -458,7 +461,9 @@ void Debugger::set_bp(int linenum){
     cout << "breakpoint set" << endl;
   }
 }
-
+//
+// line_exists
+//
 bool Debugger::line_exists(STMT* stmt, int linenum){
   while (stmt != nullptr){
     if (stmt->line == linenum){
@@ -468,7 +473,9 @@ bool Debugger::line_exists(STMT* stmt, int linenum){
   }
   return false;
 }
-
+//
+// remove_bp
+//
 void Debugger::remove_bp(int linenum){
   for (auto iter = breakpoints.begin(); iter < breakpoints.end(); iter++){
     if(*iter == linenum){
@@ -479,7 +486,9 @@ void Debugger::remove_bp(int linenum){
   }
   cout << "no such breakpoint" << endl;
 }
-
+//
+// clear_bps
+//
 void Debugger::clear_bps(){
   for (int bp : breakpoints)
     breakpoints.pop_back();
