@@ -300,92 +300,89 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
 void Debugger::step(){
   if (state == "Completed" || curr_stmt == nullptr){
     state = "Completed";
-    // No return here - let code continue to handle any additional operations
+    return;
   }
-  else {
-    if (state == "Loaded"){
-      state = "Running";
-    }
+  
+  if (state == "Loaded"){
+    state = "Running";
+  }
 
-    // Temporary variables for statement links
-    STMT* saved_next = nullptr;
-    STMT* saved_true = nullptr;
-    STMT* saved_false = nullptr;
-
-    unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
-
-    // Execute current statement
-    ExecuteResult result = execute(curr_stmt, mem);
-
-    // Reset breakpoint flag
-    last_bp_line = -1;
-
-    // Restore links
-    relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-
-    // Key change: When result.Success is false (semantic error occurs),
-    // ONLY set state to "Completed" but don't print any completion message
-    if (!result.Success){
-      state = "Completed";
-      return;
-    }
-    
-    // Advance pointers
-    curr_stmt = saved_next;
-    if (curr_stmt != nullptr) {
-      next_stmt = get_next_stmt(curr_stmt);
-    } else {
-      next_stmt = nullptr;
-      state = "Completed";
-      // No message here either
+  // Check if we are at a breakpoint first before doing anything
+  for (int bp : breakpoints) {
+    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+      cout << "hit breakpoint at line " << curr_stmt->line << endl;
+      print_line();  // Show the line in Python syntax
+      last_bp_line = curr_stmt->line; // this is the line we stopped at
+      return;  // do not execute this line yet
     }
   }
 
+  // Rest of the step() function remains the same...
+  STMT* saved_next = nullptr;
+  STMT* saved_true = nullptr;
+  STMT* saved_false = nullptr;
 
+  unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
+  ExecuteResult result = execute(curr_stmt, mem);
+  last_bp_line = -1;
+  relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
 
-
+  if (!result.Success){
+    state = "Completed";
+    return;
+  }
+  
+  curr_stmt = saved_next;
+  if (curr_stmt != nullptr) {
+    next_stmt = get_next_stmt(curr_stmt);
+  } else {
+    next_stmt = nullptr;
+    state = "Completed";
+  }
 
   // if (state == "Completed" || curr_stmt == nullptr){
   //   state = "Completed";
-  //   return;
+  //   // No return here - let code continue to handle any additional operations
+  // }
+  // else {
+  //   if (state == "Loaded"){
+  //     state = "Running";
+  //   }
+
+  //   // Temporary variables for statement links
+  //   STMT* saved_next = nullptr;
+  //   STMT* saved_true = nullptr;
+  //   STMT* saved_false = nullptr;
+
+  //   unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
+
+  //   // Execute current statement
+  //   ExecuteResult result = execute(curr_stmt, mem);
+
+  //   // Reset breakpoint flag
+  //   last_bp_line = -1;
+
+  //   // Restore links
+  //   relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+
+  //   // Key change: When result.Success is false (semantic error occurs),
+  //   // ONLY set state to "Completed" but don't print any completion message
+  //   if (!result.Success){
+  //     state = "Completed";
+  //     return;
+  //   }
+    
+  //   // Advance pointers
+  //   curr_stmt = saved_next;
+  //   if (curr_stmt != nullptr) {
+  //     next_stmt = get_next_stmt(curr_stmt);
+  //   } else {
+  //     next_stmt = nullptr;
+  //     state = "Completed";
+  //     // No message here either
+  //   }
   // }
   
-  // if (state == "Loaded"){
-  //   state = "Running";
-  // }
-
-  // // Temporary variables for statement links
-  // STMT* saved_next = nullptr;
-  // STMT* saved_true = nullptr;
-  // STMT* saved_false = nullptr;
-
-  // unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
-
-  // // Execute current statement
-  // ExecuteResult result = execute(curr_stmt, mem);
-
-  // // Reset breakpoint flag
-  // last_bp_line = -1;
-
-  // // Restore links
-  // relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-
-  // // Key change: When result.Success is false (semantic error occurs),
-  // // ONLY set state to "Completed" but don't print any completion message
-  // if (!result.Success){
-  //   state = "Completed";
-  //   return;
-  // }
-  
-  // // Advance pointers
-  // curr_stmt = saved_next;
-  // if (curr_stmt != nullptr) {
-  //   next_stmt = get_next_stmt(curr_stmt);
-  // } else {
-  //   next_stmt = nullptr;
-  //   state = "Completed";
-  //   // No message here either
-  // }
 }
 
 //
