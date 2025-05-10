@@ -325,17 +325,38 @@ void Debugger::step(){
   unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
   ExecuteResult result = execute(curr_stmt, mem);
   last_bp_line = -1;
-  relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+
+    if (curr_stmt->stmt_type == STMT_IF_THEN_ELSE) {
+    relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+    
+    // Get the result of the condition evaluation
+    // This depends on how your execute function communicates the result
+    // You might need to check result.Success or another field
+    // bool condition_result = result.Success /* Get condition result from execute() or mem */;
+    if (result.Success) {
+      curr_stmt = saved_true;  // Take the true path
+    } else {
+      curr_stmt = saved_false; // Take the false path
+    }
+  } 
+  else {
+    relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+    curr_stmt = saved_next;  // For non-if statements, continue to next statement
+  }
+
+
+  // relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
 
   if (!result.Success){
     state = "Completed";
     return;
   }
   
-  curr_stmt = saved_next;
+  // curr_stmt = saved_next;
   if (curr_stmt != nullptr) {
     next_stmt = get_next_stmt(curr_stmt);
-  } else {
+  } 
+  else {
     next_stmt = nullptr;
     state = "Completed";
   }
