@@ -416,10 +416,7 @@ void Debugger::print_ram_value(string varname, RAM_VALUE* value){
     cout << "int): " << value->types.i;
   }
   else if (value->value_type == RAM_TYPE_BOOLEAN) {
-    if (value->types.i != 0)
-      cout << "bool): True";
-    else
-      cout << "bool): False";
+    cout << "bool): " << value->types.i;
   }
   else if (value->value_type == RAM_TYPE_PTR) {
     cout << "ptr): " << value->types.i;
