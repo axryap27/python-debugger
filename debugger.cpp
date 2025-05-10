@@ -108,21 +108,20 @@ void Debugger::run()
            << endl;
     }
     // steps through the programgraph STRUCT
-    else if (cmd == "s"){
-      if (state == "Completed"){
+   else if (cmd == "s"){
+    if (state == "Completed" || curr_stmt == nullptr){
       cout << "program has completed" << endl;
-      return;
-      }
-    if (state == "Loaded"){
-      state = "Running";
     }
-    if(curr_stmt == nullptr){
-      cout << "program has completed" << endl;
-      state = "Completed";
-      return;
+    else {
+      if (state == "Loaded"){
+        state = "Running";
       }
-      step();
-    }
+    step();
+    
+    // We don't need to check if step caused completion here, as the
+    // next time 's' is pressed, it will show "program has completed"
+  }
+}
     // what line is this? cmd
     else if (cmd == "w"){
       // if (state == "Completed"){
@@ -201,13 +200,21 @@ void Debugger::run()
       clear_bps();
     }
     else if (cmd == "r") {
-      int count = 0;
+      if (state == "Completed" || curr_stmt == nullptr) {
+        cout << "program has completed" << endl;
+        continue;
+      }
+      
+      if (state == "Loaded") {
+        state = "Running";
+      }
+      
       while (curr_stmt != nullptr && state != "Completed") {
         bool hit = false;
-        count = count + 1;
-
+        
+        // Check for breakpoints
         for (int bp : breakpoints) {
-          if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+          if (curr_stmt != nullptr && curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
             cout << "hit breakpoint at line " << curr_stmt->line << endl;
             print_line();
             last_bp_line = curr_stmt->line;
@@ -215,21 +222,17 @@ void Debugger::run()
             break;
           }
         }
-
+        
         if (hit) {
-          break;  // stop before executing
+          break;  // stop at breakpoint before executing
         }
-
+        
         step();  // run current statement
+        
+        if (state == "Completed") {
+          break;  // Exit the loop but don't print any message
+        }
       }
-      count = count + 1;
-      if (count > 3){
-        cout << "program has completed" << endl;
-      }
-
-        // if (state == "Completed" && count > 1){
-        //   cout << "program has completed" << endl;
-        // }
     }
     
     else if (cmd == ""){
@@ -295,44 +298,94 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
 // step function
 // see header file for comments
 void Debugger::step(){
-  for (int bp : breakpoints) {
-    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
-      cout << "hit breakpoint at line " << curr_stmt->line << endl;
-      last_bp_line = curr_stmt->line; // this is the line we stopped at
-      return;  // do not execute
+  if (state == "Completed" || curr_stmt == nullptr){
+    state = "Completed";
+    // No return here - let code continue to handle any additional operations
+  }
+  else {
+    if (state == "Loaded"){
+      state = "Running";
+    }
+
+    // Temporary variables for statement links
+    STMT* saved_next = nullptr;
+    STMT* saved_true = nullptr;
+    STMT* saved_false = nullptr;
+
+    unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
+
+    // Execute current statement
+    ExecuteResult result = execute(curr_stmt, mem);
+
+    // Reset breakpoint flag
+    last_bp_line = -1;
+
+    // Restore links
+    relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+
+    // Key change: When result.Success is false (semantic error occurs),
+    // ONLY set state to "Completed" but don't print any completion message
+    if (!result.Success){
+      state = "Completed";
+      return;
+    }
+    
+    // Advance pointers
+    curr_stmt = saved_next;
+    if (curr_stmt != nullptr) {
+      next_stmt = get_next_stmt(curr_stmt);
+    } else {
+      next_stmt = nullptr;
+      state = "Completed";
+      // No message here either
     }
   }
-  // this code is only reached after the if statement above is run through once
-  // temp variable for next_stmt 
-  STMT* saved_next = nullptr;
-  STMT *saved_true = nullptr;
-  STMT *saved_false = nullptr;
 
-  unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
 
-  // executes curr stmt using mem
-  //
-  ExecuteResult result = execute(curr_stmt, mem);
 
-  //reset the flag so the next bp set can be printed on terminal
-  last_bp_line = -1;
 
-  // relink and move to next line
-  relink_stmt(curr_stmt, saved_next);
-  // ram_destroy();
 
-  if (!result.Success){
-    state = "Completed";
-    return;
-  }
+  // if (state == "Completed" || curr_stmt == nullptr){
+  //   state = "Completed";
+  //   return;
+  // }
   
-  // advanced pointers
-  curr_stmt = saved_next;
-  next_stmt = get_next_stmt(curr_stmt);
+  // if (state == "Loaded"){
+  //   state = "Running";
+  // }
 
-  if (curr_stmt == nullptr)
-  //&& next_stmt == nullptr)
-    state = "Completed";
+  // // Temporary variables for statement links
+  // STMT* saved_next = nullptr;
+  // STMT* saved_true = nullptr;
+  // STMT* saved_false = nullptr;
+
+  // unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
+
+  // // Execute current statement
+  // ExecuteResult result = execute(curr_stmt, mem);
+
+  // // Reset breakpoint flag
+  // last_bp_line = -1;
+
+  // // Restore links
+  // relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+
+  // // Key change: When result.Success is false (semantic error occurs),
+  // // ONLY set state to "Completed" but don't print any completion message
+  // if (!result.Success){
+  //   state = "Completed";
+  //   return;
+  // }
+  
+  // // Advance pointers
+  // curr_stmt = saved_next;
+  // if (curr_stmt != nullptr) {
+  //   next_stmt = get_next_stmt(curr_stmt);
+  // } else {
+  //   next_stmt = nullptr;
+  //   state = "Completed";
+  //   // No message here either
+  // }
 }
 
 //
