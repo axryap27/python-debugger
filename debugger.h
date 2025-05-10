@@ -33,6 +33,8 @@ private:
   struct RAM* mem; // execution needed memory
   string state; 
   vector<int> breakpoints;
+  // used for if "r" is clicked more than once
+  int completed_r_count = 0;
   
   //used to make sure if we already printed out breakpoint so next time "s" is pressed we run that breakpoint
   int last_bp_line = -1; 

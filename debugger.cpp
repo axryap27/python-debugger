@@ -109,6 +109,18 @@ void Debugger::run()
     }
     // steps through the programgraph STRUCT
     else if (cmd == "s"){
+      if (state == "Completed"){
+      cout << "program has completed" << endl;
+      return;
+      }
+    if (state == "Loaded"){
+      state = "Running";
+    }
+    if(curr_stmt == nullptr){
+      cout << "program has completed" << endl;
+      state = "Completed";
+      return;
+      }
       step();
     }
     // what line is this? cmd
@@ -189,8 +201,10 @@ void Debugger::run()
       clear_bps();
     }
     else if (cmd == "r") {
+      int count = 0;
       while (curr_stmt != nullptr && state != "Completed") {
         bool hit = false;
+        count = count + 1;
 
         for (int bp : breakpoints) {
           if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
@@ -208,11 +222,16 @@ void Debugger::run()
 
         step();  // run current statement
       }
+      count = count + 1;
+      if (count > 3){
+        cout << "program has completed" << endl;
+      }
 
-      // if (state == "Completed") {
-      //   cout << "program has completed" << endl;
-      // }
+        // if (state == "Completed" && count > 1){
+        //   cout << "program has completed" << endl;
+        // }
     }
+    
     else if (cmd == ""){
       cout << "unknown command" << endl;
     }
@@ -276,20 +295,6 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
 // step function
 // see header file for comments
 void Debugger::step(){
-  if (state == "Completed"){
-    cout << "program has completed" << endl;
-    return;
-  }
-  if (state == "Loaded"){
-    state = "Running";
-  }
-  if(curr_stmt == nullptr){
-    cout << "program has completed" << endl;
-    state = "Completed";
-    return;
-  }
-
-  // check if we are at a breakpoint first before doing anything
   for (int bp : breakpoints) {
     if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
       cout << "hit breakpoint at line " << curr_stmt->line << endl;
@@ -326,6 +331,7 @@ void Debugger::step(){
   next_stmt = get_next_stmt(curr_stmt);
 
   if (curr_stmt == nullptr)
+  //&& next_stmt == nullptr)
     state = "Completed";
 }
 
@@ -494,3 +500,4 @@ void Debugger::clear_bps(){
     breakpoints.pop_back();
   cout << "breakpoints cleared" << endl;
 }
+
