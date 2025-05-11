@@ -400,6 +400,15 @@ void Debugger::step(){
     
     return;
   }
+
+  for (int bp : breakpoints) {
+    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+      cout << "hit breakpoint at line " << curr_stmt->line << endl;
+      print_line();  // Show the line in Python syntax
+      last_bp_line = curr_stmt->line; // this is the line we stopped at
+      return;  // do not execute this line yet
+    }
+  }
   
   // For non-if statements, proceed as normal
   STMT* saved_next = nullptr;
