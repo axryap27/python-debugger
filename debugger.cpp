@@ -200,6 +200,7 @@ void Debugger::run()
       clear_bps();
     }
     else if (cmd == "r") {
+
       if (state == "Completed" || curr_stmt == nullptr) {
         cout << "program has completed" << endl;
         continue;
@@ -209,10 +210,9 @@ void Debugger::run()
         state = "Running";
       }
       
-      while (curr_stmt != nullptr && state != "Completed") {
+        while (curr_stmt != nullptr && state != "Completed") {
+        // Check for breakpoints at the current statement
         bool hit = false;
-        
-        // Check for breakpoints
         for (int bp : breakpoints) {
           if (curr_stmt != nullptr && curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
             cout << "hit breakpoint at line " << curr_stmt->line << endl;
@@ -227,12 +227,48 @@ void Debugger::run()
           break;  // stop at breakpoint before executing
         }
         
-        step();  // run current statement
+        // Execute the current statement and update pointers
+        step();
         
         if (state == "Completed") {
-          break;  // Exit the loop but don't print any message
+          break;
         }
       }
+
+
+      // if (state == "Completed" || curr_stmt == nullptr) {
+      //   cout << "program has completed" << endl;
+      //   continue;
+      // }
+      
+      // if (state == "Loaded") {
+      //   state = "Running";
+      // }
+      
+      // while (curr_stmt != nullptr && state != "Completed") {
+      //   bool hit = false;
+        
+      //   // Check for breakpoints
+      //   for (int bp : breakpoints) {
+      //     if (curr_stmt != nullptr && curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+      //       cout << "hit breakpoint at line " << curr_stmt->line << endl;
+      //       print_line();
+      //       last_bp_line = curr_stmt->line;
+      //       hit = true;
+      //       break;
+      //     }
+      //   }
+        
+      //   if (hit) {
+      //     break;  // stop at breakpoint before executing
+      //   }
+        
+      //   step();  // run current statement
+        
+      //   if (state == "Completed") {
+      //     break;  // Exit the loop but don't print any message
+      //   }
+      // }
     }
     
     else if (cmd == ""){
@@ -298,113 +334,158 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
 // step function
 // see header file for comments
 void Debugger::step(){
-  if (state == "Completed" || curr_stmt == nullptr){
+  if (state == "Completed" || curr_stmt == nullptr) {
     state = "Completed";
     return;
   }
   
-  if (state == "Loaded"){
+  if (state == "Loaded") {
     state = "Running";
   }
 
-  // Check if we are at a breakpoint first before doing anything
-  for (int bp : breakpoints) {
-    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
-      cout << "hit breakpoint at line " << curr_stmt->line << endl;
-      print_line();  // Show the line in Python syntax
-      last_bp_line = curr_stmt->line; // this is the line we stopped at
-      return;  // do not execute this line yet
+  // Special handling for if statements
+  if (curr_stmt != nullptr && curr_stmt->stmt_type == STMT_IF_THEN_ELSE) {
+    // Get pointers to the next, true, and false paths
+    STMT* next_path = curr_stmt->types.if_then_else->next_stmt;
+    STMT* true_path = curr_stmt->types.if_then_else->true_path;
+    STMT* false_path = curr_stmt->types.if_then_else->false_path;
+    
+    // Get the condition expression
+    EXPR* condition = curr_stmt->types.if_then_else->condition;
+    
+    // Evaluate just the condition using execute_expr
+    RAM_VALUE* condition_result = execute_expr(curr_stmt, mem, condition);
+    
+    if (condition_result == nullptr) {
+      // Condition evaluation failed
+      state = "Completed";
+      return;
     }
+    
+    // Determine which branch to take based on the condition result
+    bool take_true_branch = false;
+    
+    if (condition_result->value_type == RAM_TYPE_BOOLEAN || 
+        condition_result->value_type == RAM_TYPE_INT) {
+      take_true_branch = (condition_result->types.i != 0);
+    } else if (condition_result->value_type == RAM_TYPE_REAL) {
+      take_true_branch = (condition_result->types.d != 0.0);
+    } else if (condition_result->value_type == RAM_TYPE_STR) {
+      take_true_branch = (condition_result->types.s != nullptr && 
+                        condition_result->types.s[0] != '\0');
+    } else if (condition_result->value_type == RAM_TYPE_PTR) {
+      take_true_branch = (condition_result->types.i != 0);
+    } else {
+      take_true_branch = false;  // For RAM_TYPE_NONE or other types
+    }
+    
+    // Free the condition result as we're done with it
+    ram_free_value(condition_result);
+    
+    // Set curr_stmt to the appropriate branch
+    if (take_true_branch && true_path != nullptr) {
+      curr_stmt = true_path;
+    } else if (!take_true_branch && false_path != nullptr) {
+      curr_stmt = false_path;
+    } else {
+      curr_stmt = next_path;  // If the selected branch is nullptr, go to next statement
+    }
+    
+    if (curr_stmt != nullptr) {
+      next_stmt = get_next_stmt(curr_stmt);
+    } else {
+      next_stmt = nullptr;
+      state = "Completed";
+    }
+    
+    return;
   }
-
-  // Rest of the step() function remains the same...
+  
+  // For non-if statements, proceed as normal
   STMT* saved_next = nullptr;
   STMT* saved_true = nullptr;
   STMT* saved_false = nullptr;
-
+  
   unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
   ExecuteResult result = execute(curr_stmt, mem);
   last_bp_line = -1;
-
-    if (curr_stmt->stmt_type == STMT_IF_THEN_ELSE) {
-    relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-    
-    // Get the result of the condition evaluation
-    // This depends on how your execute function communicates the result
-    // You might need to check result.Success or another field
-    // bool condition_result = result.Success /* Get condition result from execute() or mem */;
-    if (result.Success) {
-      curr_stmt = saved_true;  // Take the true path
-    } else {
-      curr_stmt = saved_false; // Take the false path
-    }
-  } 
-  else {
-    relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-    curr_stmt = saved_next;  // For non-if statements, continue to next statement
-  }
-
-
-  // relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-
-  if (!result.Success){
+  relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+  
+  if (!result.Success) {
     state = "Completed";
     return;
   }
   
-  // curr_stmt = saved_next;
+  curr_stmt = saved_next;
   if (curr_stmt != nullptr) {
     next_stmt = get_next_stmt(curr_stmt);
-  } 
-  else {
+  } else {
     next_stmt = nullptr;
     state = "Completed";
   }
-
+}
+  
   // if (state == "Completed" || curr_stmt == nullptr){
   //   state = "Completed";
-  //   // No return here - let code continue to handle any additional operations
-  // }
-  // else {
-  //   if (state == "Loaded"){
-  //     state = "Running";
-  //   }
-
-  //   // Temporary variables for statement links
-  //   STMT* saved_next = nullptr;
-  //   STMT* saved_true = nullptr;
-  //   STMT* saved_false = nullptr;
-
-  //   unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
-
-  //   // Execute current statement
-  //   ExecuteResult result = execute(curr_stmt, mem);
-
-  //   // Reset breakpoint flag
-  //   last_bp_line = -1;
-
-  //   // Restore links
-  //   relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-
-  //   // Key change: When result.Success is false (semantic error occurs),
-  //   // ONLY set state to "Completed" but don't print any completion message
-  //   if (!result.Success){
-  //     state = "Completed";
-  //     return;
-  //   }
-    
-  //   // Advance pointers
-  //   curr_stmt = saved_next;
-  //   if (curr_stmt != nullptr) {
-  //     next_stmt = get_next_stmt(curr_stmt);
-  //   } else {
-  //     next_stmt = nullptr;
-  //     state = "Completed";
-  //     // No message here either
-  //   }
+  //   return;
   // }
   
-}
+  // if (state == "Loaded"){
+  //   state = "Running";
+  // }
+
+  // if (curr_stmt->stmt_type == STMT_IF_THEN_ELSE){
+  //   // check execute result to see if we need to go down this path
+  // }
+
+  // // Check if we are at a breakpoint first before doing anything
+  // for (int bp : breakpoints) {
+  //   if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+  //     cout << "hit breakpoint at line " << curr_stmt->line << endl;
+  //     print_line();  // Show the line in Python syntax
+  //     last_bp_line = curr_stmt->line; // this is the line we stopped at
+  //     return;  // do not execute this line yet
+  //   }
+  // }
+
+  // STMT* saved_next = nullptr;
+  // STMT* saved_true = nullptr;
+  // STMT* saved_false = nullptr;
+
+  // unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
+  // ExecuteResult result = execute(curr_stmt, mem);
+  // last_bp_line = -1;
+
+  // if (curr_stmt->stmt_type == STMT_IF_THEN_ELSE) {
+  //   relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+    
+  //   curr_stmt = result.LastStmt;
+  //   // Get the result of the condition evaluation
+  //   if (result.Success) {
+  //     curr_stmt = saved_true;  // Take the true path
+  //   } 
+  //   else {
+  //     curr_stmt = saved_false; // Take the false path
+  //   }
+  // } 
+  // else {
+  //   relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
+  //   curr_stmt = saved_next;  // For non-if statements, continue to next statement
+  // }
+
+  // if (!result.Success){
+  //   state = "Completed";
+  //   return;
+  // }
+  
+  // // curr_stmt = saved_next;
+  // if (curr_stmt != nullptr) {
+  //   next_stmt = get_next_stmt(curr_stmt);
+  // } 
+  // else {
+  //   next_stmt = nullptr;
+  //   state = "Completed";
+  // }
 
 //
 // print_line function
@@ -539,13 +620,44 @@ void Debugger::set_bp(int linenum){
 // line_exists
 //
 bool Debugger::line_exists(STMT* stmt, int linenum){
-  while (stmt != nullptr){
-    if (stmt->line == linenum){
+  if (stmt == nullptr) 
+    return false;
+  // using a stack-esque ds to search all paths if stmt pointer is a if-then or while stmt
+  vector<STMT*> stack;
+  stack.push_back(stmt);
+
+  while (!stack.empty()) {
+    STMT* current = stack.back();
+    stack.pop_back();
+
+    if (current == nullptr) 
+      continue;
+    if (current->line == linenum) 
       return true;
+
+    // Add subsidary branches (true/false branches, loop bodies) to stack
+    if (current->stmt_type == STMT_IF_THEN_ELSE) {
+      stack.push_back(current->types.if_then_else->next_stmt);
+      stack.push_back(current->types.if_then_else->true_path);
+      stack.push_back(current->types.if_then_else->false_path);
     }
-    stmt = get_next_stmt(stmt);
+    else if (current->stmt_type == STMT_WHILE_LOOP) {
+      stack.push_back(current->types.while_loop->next_stmt);
+      stack.push_back(current->types.while_loop->loop_body);
+    }
+    else {
+      stack.push_back(get_next_stmt(current));
+    }
   }
   return false;
+  // while (stmt != nullptr){
+  //   if (stmt->line == linenum){
+  //     return true;
+  //   }
+  //   stmt = get_next_stmt(stmt);
+  // }
+  // return false;
+
 }
 //
 // remove_bp
@@ -568,4 +680,3 @@ void Debugger::clear_bps(){
     breakpoints.pop_back();
   cout << "breakpoints cleared" << endl;
 }
-
