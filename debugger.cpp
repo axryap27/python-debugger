@@ -433,68 +433,6 @@ void Debugger::step(){
     state = "Completed";
   }
 }
-  
-  // if (state == "Completed" || curr_stmt == nullptr){
-  //   state = "Completed";
-  //   return;
-  // }
-  
-  // if (state == "Loaded"){
-  //   state = "Running";
-  // }
-
-  // if (curr_stmt->stmt_type == STMT_IF_THEN_ELSE){
-  //   // check execute result to see if we need to go down this path
-  // }
-
-  // // Check if we are at a breakpoint first before doing anything
-  // for (int bp : breakpoints) {
-  //   if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
-  //     cout << "hit breakpoint at line " << curr_stmt->line << endl;
-  //     print_line();  // Show the line in Python syntax
-  //     last_bp_line = curr_stmt->line; // this is the line we stopped at
-  //     return;  // do not execute this line yet
-  //   }
-  // }
-
-  // STMT* saved_next = nullptr;
-  // STMT* saved_true = nullptr;
-  // STMT* saved_false = nullptr;
-
-  // unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
-  // ExecuteResult result = execute(curr_stmt, mem);
-  // last_bp_line = -1;
-
-  // if (curr_stmt->stmt_type == STMT_IF_THEN_ELSE) {
-  //   relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-    
-  //   curr_stmt = result.LastStmt;
-  //   // Get the result of the condition evaluation
-  //   if (result.Success) {
-  //     curr_stmt = saved_true;  // Take the true path
-  //   } 
-  //   else {
-  //     curr_stmt = saved_false; // Take the false path
-  //   }
-  // } 
-  // else {
-  //   relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
-  //   curr_stmt = saved_next;  // For non-if statements, continue to next statement
-  // }
-
-  // if (!result.Success){
-  //   state = "Completed";
-  //   return;
-  // }
-  
-  // // curr_stmt = saved_next;
-  // if (curr_stmt != nullptr) {
-  //   next_stmt = get_next_stmt(curr_stmt);
-  // } 
-  // else {
-  //   next_stmt = nullptr;
-  //   state = "Completed";
-  // }
 
 //
 // print_line function
