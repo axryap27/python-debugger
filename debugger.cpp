@@ -333,7 +333,8 @@ void Debugger::set_next_stmt(struct STMT* stmt, struct STMT* next){
 //
 // step function
 // see header file for comments
-void Debugger::step(){
+
+void Debugger::step() {
   if (state == "Completed" || curr_stmt == nullptr) {
     state = "Completed";
     return;
@@ -343,18 +344,32 @@ void Debugger::step(){
     state = "Running";
   }
 
+  // Check for breakpoints first - this ensures we stop at each statement, 
+  // including each "elif" statement, before evaluating it
+  for (int bp : breakpoints) {
+    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
+      cout << "hit breakpoint at line " << curr_stmt->line << endl;
+      print_line();
+      last_bp_line = curr_stmt->line;
+      return;  // do not execute this line yet
+    }
+  }
+
   // Special handling for if statements
   if (curr_stmt != nullptr && curr_stmt->stmt_type == STMT_IF_THEN_ELSE) {
+    // Store the current statement so we can come back to it
+    STMT* current_if = curr_stmt;
+    
     // Get pointers to the next, true, and false paths
-    STMT* next_path = curr_stmt->types.if_then_else->next_stmt;
-    STMT* true_path = curr_stmt->types.if_then_else->true_path;
-    STMT* false_path = curr_stmt->types.if_then_else->false_path;
+    STMT* next_path = current_if->types.if_then_else->next_stmt;
+    STMT* true_path = current_if->types.if_then_else->true_path;
+    STMT* false_path = current_if->types.if_then_else->false_path;
     
     // Get the condition expression
-    EXPR* condition = curr_stmt->types.if_then_else->condition;
+    EXPR* condition = current_if->types.if_then_else->condition;
     
     // Evaluate just the condition using execute_expr
-    RAM_VALUE* condition_result = execute_expr(curr_stmt, mem, condition);
+    RAM_VALUE* condition_result = execute_expr(current_if, mem, condition);
     
     if (condition_result == nullptr) {
       // Condition evaluation failed
@@ -382,11 +397,27 @@ void Debugger::step(){
     // Free the condition result as we're done with it
     ram_free_value(condition_result);
     
+    // Key change: Execute this if statement, marking it as executed.
+    // This doesn't affect the execution result, but lets the debugger know
+    // that we've processed this statement
+    STMT* saved_next = nullptr;
+    STMT* saved_true = nullptr;
+    STMT* saved_false = nullptr;
+    
+    unlink_stmt(current_if, &saved_next, &saved_true, &saved_false);
+    
+    // We don't actually need to call execute() here since we've already
+    // evaluated the condition, but we need to mark this statement as executed
+    // to ensure we don't double-execute it
+    last_bp_line = -1;
+    
+    relink_stmt(current_if, saved_next, saved_true, saved_false);
+    
     // Set curr_stmt to the appropriate branch
     if (take_true_branch && true_path != nullptr) {
       curr_stmt = true_path;
     } else if (!take_true_branch && false_path != nullptr) {
-      curr_stmt = false_path;
+      curr_stmt = false_path;  // This handles both elif and else branches
     } else {
       curr_stmt = next_path;  // If the selected branch is nullptr, go to next statement
     }
@@ -399,15 +430,6 @@ void Debugger::step(){
     }
     
     return;
-  }
-
-  for (int bp : breakpoints) {
-    if (curr_stmt->line == bp && curr_stmt->line != last_bp_line) {
-      cout << "hit breakpoint at line " << curr_stmt->line << endl;
-      print_line();  // Show the line in Python syntax
-      last_bp_line = curr_stmt->line; // this is the line we stopped at
-      return;  // do not execute this line yet
-    }
   }
   
   // For non-if statements, proceed as normal
@@ -437,17 +459,38 @@ void Debugger::step(){
 //
 // print_line function
 // see .h file for comments
-void Debugger::print_line(){
-  
+void Debugger::print_line() {
   if (state == "Completed" || curr_stmt == nullptr) {
     cout << "completed execution" << endl;
     return;
   }
+  
   STMT* saved_next = nullptr;
-  unlink_stmt(curr_stmt, &saved_next);
+  STMT* saved_true = nullptr;
+  STMT* saved_false = nullptr;
+  
+  // Save all pointers to ensure proper structure for printing
+  unlink_stmt(curr_stmt, &saved_next, &saved_true, &saved_false);
+  
+  // Print just the current statement
   programgraph_print(curr_stmt);
-  relink_stmt(curr_stmt, saved_next);
+  
+  // Restore all pointers
+  relink_stmt(curr_stmt, saved_next, saved_true, saved_false);
 }
+
+
+// void Debugger::print_line(){
+  
+//   if (state == "Completed" || curr_stmt == nullptr) {
+//     cout << "completed execution" << endl;
+//     return;
+//   }
+//   STMT* saved_next = nullptr;
+//   unlink_stmt(curr_stmt, &saved_next);
+//   programgraph_print(curr_stmt);
+//   relink_stmt(curr_stmt, saved_next);
+// }
 
 //
 // print_ram_value
