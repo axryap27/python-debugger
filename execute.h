@@ -3,10 +3,7 @@
 //
 // Executes nuPython program, given as a Program Graph.
 // 
-// Prof. Joe Hummel
-// Northwestern University
-// CS 211
-//
+
 
 #pragma once
 
