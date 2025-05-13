@@ -11,10 +11,7 @@
 // manually; enter $ to denote the end of the input program. Then 
 // you can debug.
 // 
-// Author: Prof. Joe Hummel
-// Northwestern University
-// CS 211
-//
+
 
 // to eliminate warnings about stdlib in Visual Studio
 #define _CRT_SECURE_NO_WARNINGS
