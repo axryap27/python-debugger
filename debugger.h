@@ -12,9 +12,7 @@
 // Initial template:
 //   Ata Guvendi
 //   Prof. Hummel
-// Northwestern University
-// CS 211
-//
+
 
 #pragma once
 #include <vector>
